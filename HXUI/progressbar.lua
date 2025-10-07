@@ -89,9 +89,21 @@ progressbar.DrawBar = function(startPosition, endPosition, gradientStart, gradie
 		rounding = 0;
 	end
 
-	local gradient = GetGradient(gradientStart, gradientEnd);
+	local gradientTexture = GetGradient(gradientStart, gradientEnd);
 
-	imgui.GetWindowDrawList():AddImageRounded(gradient, startPosition, endPosition, {0, 0}, {1, 1}, IM_COL32_WHITE, rounding, cornerFlags);
+	local width = endPosition[1] - startPosition[1];
+	local height = endPosition[2] - startPosition[2];
+
+	-- Use imgui.Image with explicit screen pos to avoid ImTextureRef userdata requirement
+	local textureId = gradientTexture;
+	if type(textureId) ~= 'number' then
+		textureId = tonumber(ffi.cast("uint32_t", textureId));
+	end
+
+	local previousPosX, previousPosY = imgui.GetCursorScreenPos();
+	imgui.SetCursorScreenPos({ startPosition[1], startPosition[2] });
+	imgui.Image(textureId, { width, height }, { 0, 0 }, { 1, 1 });
+	imgui.SetCursorScreenPos({ previousPosX, previousPosY });
 end
 
 progressbar.DrawColoredBar = function(startPosition, endPosition, color, rounding, cornerFlags)
@@ -104,14 +116,24 @@ end
 
 progressbar.DrawBookends = function(positionStartX, positionStartY, width, height)
 	local bookendTexture = GetBookendTexture();
+
+	local textureId = bookendTexture;
+	if type(textureId) ~= 'number' then
+		textureId = tonumber(ffi.cast("uint32_t", textureId));
+	end
 	
 	local bookendWidth = height / 2;
 	
-	-- Draw the left bookend
-	imgui.GetWindowDrawList():AddImage(bookendTexture, {positionStartX, positionStartY}, {positionStartX + bookendWidth, positionStartY + height}, {0, 0}, {1, 1}, IM_COL32_WHITE);
-	
-	-- Draw the right bookend
-	imgui.GetWindowDrawList():AddImage(bookendTexture, {positionStartX + width - bookendWidth, positionStartY}, {positionStartX + width, positionStartY + height}, {1, 1}, {0, 0}, IM_COL32_WHITE);
+	local prevX, prevY = imgui.GetCursorScreenPos();
+	imgui.SetCursorScreenPos({ positionStartX, positionStartY });
+	imgui.Image(textureId, { bookendWidth, height }, { 0, 0 }, { 1, 1 });
+
+	-- Draw the right bookend (flipped horizontally via UVs)
+	imgui.SetCursorScreenPos({ positionStartX + width - bookendWidth, positionStartY });
+	imgui.Image(textureId, { bookendWidth, height }, { 1, 1 }, { 0, 0 });
+
+	-- Restore previous cursor position
+	imgui.SetCursorScreenPos({ prevX, prevY });
 end
 
 progressbar.ProgressBar  = function(percentList, dimensions, options)

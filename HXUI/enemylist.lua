@@ -41,7 +41,7 @@ enemylist.DrawWindow = function(settings)
 		windowFlags = bit.bor(windowFlags, ImGuiWindowFlags_NoMove);
 	end
 	if (imgui.Begin('EnemyList', true, windowFlags)) then
-		imgui.SetWindowFontScale(settings.textScale);
+		-- SetWindowFontScale not available in current ImGui bindings; skip scaling
 		local winStartX, winStartY = imgui.GetWindowPos();
 		local playerTarget = AshitaCore:GetMemoryManager():GetTarget();
 		local targetIndex;
@@ -60,10 +60,10 @@ enemylist.DrawWindow = function(settings)
 		local numTargets = 0;
 		for k,v in pairs(allClaimedTargets) do
 			local ent = GetEntity(k);
-			if (v ~= nil and ent ~= nil and GetIsValidMob(k)) then
+            if (v ~= nil and ent ~= nil and GetIsValidMob(k) and ent.HPPercent > 0 and ent.Name ~= nil) then
 				-- Obtain and prepare target information..
 				local targetNameText = ent.Name;
-				if (targetNameText ~= nil) then
+				-- if (targetNameText ~= nil) then
 
 					local color = GetColorOfTargetRGBA(ent, k);
 					imgui.Dummy({0,settings.entrySpacing});
@@ -104,7 +104,7 @@ enemylist.DrawWindow = function(settings)
 							imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, {1, 1});
 							DrawStatusIcons(buffIds, settings.iconSize, settings.maxIcons, 1);
 							imgui.PopStyleVar(1);
-						end 
+						end
 						imgui.End();
 					end
 
@@ -122,7 +122,7 @@ enemylist.DrawWindow = function(settings)
 					if (numTargets >= gConfig.maxEnemyListEntries) then
 						break;
 					end
-				end
+				-- end
 			else
 				allClaimedTargets[k] = nil;
 			end
